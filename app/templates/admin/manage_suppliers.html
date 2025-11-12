@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center">
+    <h1 class="h2">{{ title }}</h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<ul class="nav nav-tabs" id="myTab" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="suppliers-tab" data-bs-toggle="tab" data-bs-target="#suppliers-tab-pane" type="button" role="tab" aria-controls="suppliers-tab-pane" aria-selected="true">
+      <i class="bi bi-truck me-1"></i> Asset Suppliers
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="technicians-tab" data-bs-toggle="tab" data-bs-target="#technicians-tab-pane" type="button" role="tab" aria-controls="technicians-tab-pane" aria-selected="false">
+      <i class="bi bi-tools me-1"></i> Repair Technicians
+    </button>
+  </li>
+</ul>
+
+<div class="tab-content" id="myTabContent">
+  <!-- Suppliers Tab Pane -->
+  <div class="tab-pane fade show active" id="suppliers-tab-pane" role="tabpanel" aria-labelledby="suppliers-tab" tabindex="0">
+    <div class="d-flex justify-content-end p-3">
+        <a href="{{ url_for('admin.add_vendor') }}" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i> Add New Supplier</a>
+    </div>
+    {% include 'admin/_vendor_list.html' %}
+  </div>
+
+  <!-- Technicians Tab Pane -->
+  <div class="tab-pane fade" id="technicians-tab-pane" role="tabpanel" aria-labelledby="technicians-tab" tabindex="0">
+    <div class="d-flex justify-content-end p-3">
+        <a href="{{ url_for('admin.add_technician') }}" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i> Add New Technician</a>
+    </div>
+    {% include 'admin/_technician_list.html' %}
+  </div>
+</div>
+{% endblock %}

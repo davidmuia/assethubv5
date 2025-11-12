@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center">
+    <h1 class="h2">Interactive Asset Reports</h1>
+        <a href="{{ url_for('reports.asset_data_explorer') }}" class="btn btn-outline-secondary me-1">
+            <i class="bi bi-table me-1"></i>   Go to Data Explorer
+        </a>
+</div>
+{% endblock %}
+{% block content %}
+<!-- DATE RANGE FILTER BLOCK - Sticks to the top of the main scroll area -->
+<div class="card shadow-sm mb-4 sticky-top" style="top: -1.5rem; z-index: 1021;">
+    <div class="card-body">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-auto">
+                <h5 class="card-title mb-0"><i class="bi bi-calendar-range me-2"></i>Date Range </h5>
+            </div>
+            <div class="col-md-3">
+                <input type="date" class="form-control form-control-sm" id="startDate" placeholder="Start Date">
+            </div>
+            <div class="col-md-3">
+                <input type="date" class="form-control form-control-sm" id="endDate" placeholder="End Date">
+            </div>
+            <div class="col-md-2">
+                <button id="applyFilterBtn" class="btn btn-primary btn-sm w-100"><i class="bi bi-funnel me-1"></i> Apply</button>
+            </div>
+            <div class="col-md-2">
+                <button id="clearFilterBtn" class="btn btn-outline-secondary btn-sm w-100">Clear</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart Rows -->
+<div class="row g-4 mb-4">
+    <!-- <div class="col-lg-4 col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header">Asset Utilization (by Status)</div>
+            <div class="card-body" style="height: 300px;"><canvas id="assetsByStatusChart"></canvas></div>
+        </div>
+    </div> -->
+    <div class="col-lg-6 col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header">Repair Costs & Frequency by Facility</div>
+            <div class="card-body" style="height: 300px;"><canvas id="repairCostsByFacilityChart"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-6 col-md-12">
+            <div class="card shadow-sm h-100">
+                <div class="card-header">Repair Outcomes Over Time (Completed vs. Cancelled)</div>
+                <div class="card-body" style="height: 300px;">
+                    <canvas id="repairOutcomesChart"></canvas>
+                </div>
+            </div>
+    </div>
+
+
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4 col-md-12">
+        <div class="card shadow-sm h-100">
+            <div class="card-header">Repair Costs & Frequency by Technician</div>
+            <div class="card-body" style="height: 300px;"><canvas id="repairCostsByTechnicianChart"></canvas></div>
+        </div>
+    </div>
+
+    <div class="col-lg-4 col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header">Assets by Category</div>
+            <div class="card-body" style="height: 300px;"><canvas id="assetsByCategoryChart"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-4 col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header">Asset Utilization (by Status)</div>
+            <div class="card-body" style="height: 300px;"><canvas id="assetsByStatusChart"></canvas></div>
+        </div>
+    </div>
+
+    <!--- <div class="col-lg-4 col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header">Asset Age Distribution</div>
+            <div class="card-body" style="height: 300px;"><canvas id="assetAgeChart"></canvas></div>
+        </div>
+    </div> --->
+
+
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // --- 1. SETUP: GRAB ALL HTML ELEMENTS AND STATE VARIABLES ---
+    const startDateInput = $('#startDate');
+    const endDateInput = $('#endDate');
+    const applyFilterBtn = $('#applyFilterBtn');
+    const clearFilterBtn = $('#clearFilterBtn');
+
+    let charts = {}; // This object will store all our chart instances
+
+    // This object contains the URLs that our click handlers will redirect to.
+    const URLS = {
+        assets: '{{ url_for("main.assets") }}',
+        manageRepairs: '{{ url_for("admin.manage_repairs") }}'
+    };
+
+    // --- 2. DEFINE HELPER FUNCTIONS ---
+
+    /**
+     * Sets the date inputs to the last 3 months.
+     */
+    function setDefaultDates() {
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setMonth(startDate.getMonth() - 3);
+        const formatDate = (date) => date.toISOString().split('T')[0];
+
+        endDateInput.val(formatDate(endDate));
+        startDateInput.val(formatDate(startDate));
+    }
+
+    /**
+     * A generic redirect function for handling chart clicks.
+     */
+    function redirectToFilteredPage(urlKey, filterKey, filterValue) {
+        const baseUrl = URLS[urlKey];
+        if (!baseUrl) {
+            console.error(`URL key '${urlKey}' not found in URLS object.`);
+            return;
+        }
+        const params = new URLSearchParams();
+        params.set(filterKey, filterValue);
+        window.location.href = `${baseUrl}?${params.toString()}`;
+    }
+
+    /**
+     * The main function to create or update a single chart.
+     */
+    function updateChart(chartId, type, url, config = {}) {
+        const ctx = document.getElementById(chartId);
+        if (!ctx) return;
+
+        if (charts[chartId]) {
+            charts[chartId].destroy();
+        }
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.labels && data.labels.length > 0) {
+                    const chartOptions = {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: config.plugins || { legend: { display: false } }
+                    };
+
+                    if (config.onClick) {
+                        chartOptions.onClick = (event, elements, chart) => {
+                            if (elements.length > 0) {
+                                const dataIndex = elements[0].index;
+                                const datasetIndex = elements[0].datasetIndex;
+                                const clickedLabel = chart.data.labels[dataIndex];
+                                // Pass the chart instance itself for more context
+                                config.onClick(clickedLabel, chart, dataIndex, datasetIndex);
+                            }
+                        };
+                    }
+                    if (config.scales) {
+                        chartOptions.scales = config.scales;
+                    }
+
+                    charts[chartId] = new Chart(ctx, {
+                        type: type,
+                        data: {
+                            labels: data.labels,
+                            datasets: config.datasets(data)
+                        },
+                        options: chartOptions
+                    });
+                } else {
+                    const context = ctx.getContext('2d');
+                    context.clearRect(0, 0, ctx.width, ctx.height);
+                    context.textAlign = 'center';
+                    context.textBaseline = 'middle';
+                    context.fillStyle = '#6c757d';
+                    context.fillText('No data available for this period.', ctx.width / 2, ctx.height / 2);
+                }
+            });
+    }
+
+    // --- 3. MAIN UPDATE FUNCTION ---
+    function updateAllCharts() {
+        const startDate = startDateInput.val();
+        const endDate = endDateInput.val();
+        const params = new URLSearchParams({ start_date: startDate, end_date: endDate }).toString();
+
+        // --- Chart Initializations ---
+
+        const repairOutcomesUrl = `{{ url_for("reports.data_repair_outcomes_monthly") }}?${params}`;
+        updateChart('repairOutcomesChart', 'bar', repairOutcomesUrl, {
+            datasets: function(data) {
+                return [
+                    {
+                        label: '# of Completed Repairs',
+                        data: data.completed_data,
+                        backgroundColor: 'rgba(25, 135, 84, 0.6)',
+                        customData: {
+                            repairIds: data.completed_ids,
+                            totalCosts: data.completed_costs // Attach cost data
+                        }
+                    },
+                    {
+                        label: '# of Cancelled Repairs',
+                        data: data.cancelled_data,
+                        backgroundColor: 'rgba(108, 117, 125, 0.6)',
+                        customData: { repairIds: data.cancelled_ids }
+                    }
+                ];
+            },
+            onClick: (label, chart, dataIndex, datasetIndex) => {
+                const dataset = chart.data.datasets[datasetIndex];
+                const repairIdsString = dataset.customData.repairIds[dataIndex];
+                if (repairIdsString) {
+                    redirectToFilteredPage('manageRepairs', 'repair_ids', repairIdsString);
+                }
+            },
+                plugins: {
+                legend: { position: 'top' },
+
+                tooltip: {
+                    callbacks: {
+                        // This function adds a footer to the tooltip
+                        footer: function(context) {
+                            const dataIndex = context[0].dataIndex;
+                            const dataset = context[0].chart.data.datasets[context[0].datasetIndex];
+
+                            // Only show a cost footer for the 'Completed' dataset
+                            if (dataset.label.includes('Completed') && dataset.customData.totalCosts) {
+                                const totalCost = dataset.customData.totalCosts[dataIndex];
+                                const formattedCost = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalCost);
+                                return `Total Cost: ${formattedCost}`;
+                            }
+                            return ''; // No footer for 'Cancelled' bars
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { stacked: false },
+                y: { beginAtZero: true, stacked: false, ticks: { stepSize: 1 } }
+            }
+        });
+
+        // Asset Utilization (Pie)
+        updateChart('assetsByStatusChart', 'pie', '{{ url_for("reports.data_assets_by_status") }}', {
+            datasets: (data) => [{ label: '# of Assets', data: data.data }],
+            plugins: { legend: { position: 'bottom' } },
+            onClick: (label) => redirectToFilteredPage('assets', 'status', label)
+        });
+
+        // Assets by Category (Doughnut)
+        updateChart('assetsByCategoryChart', 'doughnut', '{{ url_for("reports.data_assets_by_category") }}', {
+            datasets: (data) => [{ label: '# of Assets', data: data.data }],
+            plugins: { legend: { position: 'bottom' } },
+            onClick: (label) => redirectToFilteredPage('assets', 'category_name', label)
+        });
+
+        // Asset Age Distribution (Bar)
+        updateChart('assetAgeChart', 'bar', '{{ url_for("reports.data_asset_age_distribution") }}', {
+            datasets: (data) => [{ label: 'Number of Assets', data: data.data, backgroundColor: 'rgba(111, 66, 193, 0.6)' }]
+        });
+
+        // Mixed bar/line charts
+        const mixedChartDatasets = (data) => [
+            { label: 'Total Cost ($)', data: data.costs, backgroundColor: 'rgba(54, 162, 235, 0.6)', yAxisID: 'y' },
+            { label: '# of Repairs', data: data.frequencies, borderColor: 'rgba(255, 99, 132, 1)', type: 'line', tension: 0.3, yAxisID: 'y1' }
+        ];
+        const mixedChartScales = {
+            y: { beginAtZero: true, position: 'left', title: { display: true, text: 'Total Cost ($)' } },
+            y1: { beginAtZero: true, display: true, position: 'right', title: { display: true, text: 'Frequency' }, grid: { drawOnChartArea: false } }
+        };
+
+        // Repair Costs by Facility
+        const facilityChartUrl = `{{ url_for("reports.data_repair_costs_by_facility") }}?${params}`;
+        updateChart('repairCostsByFacilityChart', 'bar', facilityChartUrl, {
+            datasets: (data) => {
+                // Attach asset_ids to the first dataset for the click handler
+                const datasets = mixedChartDatasets(data);
+                datasets[0].customData = { assetIds: data.asset_ids };
+                return datasets;
+            },
+            scales: mixedChartScales,
+            onClick: (label, chart, dataIndex, datasetIndex) => {
+                const assetIds = chart.data.datasets[0].customData.assetIds[dataIndex];
+                if (assetIds && assetIds.length > 0) redirectToFilteredPage('assets', 'asset_ids', assetIds.join(','));
+            }
+        });
+
+        // Repair Costs by Technician
+        const techChartUrl = `{{ url_for("reports.data_repair_costs_by_technician") }}?${params}`;
+        updateChart('repairCostsByTechnicianChart', 'bar', techChartUrl, {
+            datasets: (data) => {
+                // Attach repair_ids to the first dataset
+                const datasets = mixedChartDatasets(data);
+                datasets[0].customData = { repairIds: data.repair_ids };
+                return datasets;
+            },
+            scales: mixedChartScales,
+            onClick: (label, chart, dataIndex, datasetIndex) => {
+                const repairIds = chart.data.datasets[0].customData.repairIds[dataIndex];
+                if (repairIds && repairIds.length > 0) redirectToFilteredPage('manageRepairs', 'repair_ids', repairIds.join(','));
+            }
+        });
+    }
+
+    // --- 4. EVENT LISTENERS ---
+    applyFilterBtn.on('click', updateAllCharts);
+    clearFilterBtn.on('click', function() {
+        setDefaultDates();
+        updateAllCharts();
+    });
+
+    // --- 5. INITIAL LOAD ---
+    setDefaultDates();
+    updateAllCharts();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center">
+    <h1 class="h2">{{ title }}</h1>
+    <a href="javascript:history.back()" class="btn btn-outline-danger me-2">
+            <i class="bi bi-arrow-left-circle me-1"></i> Cancel
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <!-- The form_width variable allows you to control the size from the route -->
+    <div class="{{ form_width or 'col-lg-6 col-md-8' }}">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <!-- Loop through all fields except the submit button and hidden tags -->
+                    {% for field in form if field.widget.input_type != 'hidden' and field.type != 'SubmitField' %}
+                        <div class="mb-3">
+                            {{ field.label(class="form-label") }}
+
+                            <!-- Add the appropriate Bootstrap class based on field type -->
+                            {% if field.type == 'SelectField' %}
+                                {{ field(class="form-select") }}
+                            {% elif field.type == 'TextAreaField' %}
+                                {{ field(class="form-control", rows=4) }}
+                            {% else %}
+                                {{ field(class="form-control") }}
+                            {% endif %}
+
+                            <!-- Display validation errors for the field -->
+                            {% for error in field.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+
+                            <!-- Display help text if the field has any -->
+                            {% if field.description %}
+                                <div class="form-text">{{ field.description }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+
+                    <div class="d-grid mt-4">
+                        {{ form.submit(class="btn btn-primary btn-lg") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

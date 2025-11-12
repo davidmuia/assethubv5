@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center">
+    <h1 class="h2">Location Hierarchy</h1>
+    {% if current_user.role == 'Super Admin' %}
+    <a href="{{ url_for('admin.list_locations') }}" class="btn btn-sm btn-outline-primary">
+        <i class="bi bi-pencil-square me-1"></i> Manage Locations
+    </a>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="row g-4">
+    {% for facility in facilities %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <!-- 1. Wrap the entire card in a link that filters the assets page -->
+        <a href="{{ url_for('main.assets', facility_id=facility.id) }}" class="text-decoration-none dashboard-card-link">
+
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-dark-subtle d-flex align-items-center">
+                    <i class="bi bi-building-fill fs-4 me-2"></i>
+                    <h5 class="mb-0">{{ facility.name }}</h5>
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for room in facility.rooms %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ room.name }}
+                        <span class="badge bg-primary rounded-pill">{{ room.assets.count() }}</span>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted">No rooms defined for this facility.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </a>
+    </div>
+    {% else %}
+    <div class="col">
+        <p class="text-center">No facilities found.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

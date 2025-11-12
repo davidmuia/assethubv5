@@ -1,0 +1,5 @@
+asset_tag,category,status,department,assigned_to,location_facility_name,location_room_name,make_model,serial_number,purchase_date,purchase_cost,warranty_period,supplier_name,processor_type,processor_speed,ram_size,storage_size,storage_type,specs
+ASSET-IT-001,Laptop,In Use,IT,Branch Manager Embakasi,Embakasi,Reception,Dell Latitude 5420,SN123ABC,2025-05-10,31350.00,36,Bright Technologies,i5,2.4GHz,16GB,512GB,SSD,
+ASSET-IT-002,Desktop,In Storage,IT,Unassigned,Warehouse,Warehouse,HP EliteDesk 800 G5,SN456DEF,2025-11-20,29950.00,36,HP Store,i7,3.0GHz,32GB,1TB,SSD,
+ASSET-RM-001,UPS,In Use,Repairs and Maintenance,Branch Manager,Sunton,Pharmacy,APC Smart-UPS 12500,SN789GHI,2025-01-05,21600.00,24,Jadma,,,,,,1500VA,
+ASSET-RM-002,Router,In Use,IT,Branch Manager,Pipeline,IT,Cisco Catalyst 9120,SN101JKL,2023-03-15,1100.00,60,Synchronized Technologies,,,,,,900W Output

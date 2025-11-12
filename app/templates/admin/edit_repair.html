@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center">
+    <h1 class="h2">{{ title }} for <a href="{{ url_for('main.asset_detail', id=repair.asset_id) }}">{{ repair.asset.asset_tag }}</a></h1>
+    <a href="{{ url_for('admin.manage_repairs') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Back to Manage Repairs
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <!-- User guidance alert box -->
+                    <div class="alert alert-info small">
+                        <strong>Please note:</strong>
+                        <ul>
+                            <li>To mark a repair as <strong>'Completed'</strong>, you must provide a Cost and select a Technician.</li>
+                            <li>To <strong>'Cancel'</strong> a repair, you must provide a reason in the Cancellation field.</li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.problem_description.label(class="form-label") }}
+                        {{ form.problem_description(class="form-control", rows=3) }}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.status.label(class="form-label") }}
+                        {{ form.status(class="form-select") }}
+                        {% for error in form.status.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+
+                    <hr>
+                    <h5 class="mb-3">Resolution Details</h5>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.cost.label(class="form-label") }}
+                            {{ form.cost(class="form-control") }}
+                            {% for error in form.cost.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.technician.label(class="form-label") }}
+                            {{ form.technician(class="form-select") }}
+                            {% for error in form.technician.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.replaced_parts.label(class="form-label") }}
+                        {{ form.replaced_parts(class="form-control", rows=3) }}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.cancellation_reason.label(class="form-label") }}
+                        {{ form.cancellation_reason(class="form-control", rows=3) }}
+                        {% for error in form.cancellation_reason.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        {{ form.submit(class="btn btn-primary btn-lg") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

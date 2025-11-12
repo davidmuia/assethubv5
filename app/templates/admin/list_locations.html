@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center">
+    <h1 class="h2">{{ title }}</h1>
+    <div class="btn-group">
+
+        <a href="{{ url_for('admin.add_facility') }}" class="btn btn-sm btn-outline-success">Add Facility</a>
+        <a href="{{ url_for('admin.add_room') }}" class="btn btn-sm btn-outline-primary">Add Room</a>
+
+    </div>
+</div>
+{% endblock %}
+{% block content %}
+{% for facility in facilities %}
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between">
+        <h4>{{ facility.name }}</h4>
+        <div>
+            <a href="{{ url_for('admin.edit_facility', id=facility.id) }}" class="btn btn-sm btn-outline-primary">Edit Facility</a>
+            <button type="button" class="btn btn-sm btn-outline-danger"
+                    data-bs-toggle="modal"
+                    data-bs-target="#confirmModal"
+                    data-form-action="{{ url_for('admin.delete_location', type='facility', id=facility.id) }}"
+                    data-modal-body="Are you sure you want to delete the facility '{{ facility.name }}'?">
+                Delete
+            </button>
+        </div>
+    </div>
+    <ul class="list-group list-group-flush">
+        {% for room in facility.rooms %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            {{ room.name }}
+            <div>
+                <a href="{{ url_for('admin.edit_room', id=room.id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                <button type="button" class="btn btn-sm btn-outline-danger"
+                        data-bs-toggle="modal"
+                        data-bs-target="#confirmModal"
+                        data-form-action="{{ url_for('admin.delete_location', type='room', id=room.id) }}"
+                        data-modal-body="Are you sure you want to delete the room '{{ room.name }}' from '{{ facility.name }}'?">
+                    Delete
+                </button>
+            </div>
+        </li>
+        {% else %}
+        <li class="list-group-item text-muted">No rooms in this facility.</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endfor %}
+{% endblock %}

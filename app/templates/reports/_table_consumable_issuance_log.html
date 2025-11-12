@@ -1,0 +1,24 @@
+<div class="report-header">
+    <div>
+        <h4>Consumable Issuance / Return Log</h4>
+        </div>
+    <div class="report-export-buttons"></div>
+</div>
+<hr>
+<table class="table table-sm table-striped datatable" style="width:100%">
+    <thead><tr><th>Date</th><th>Item</th><th>Qty</th><th>Asset</th><th>Asset Owner</th><th>Transaction Type</th><th>Notes</th><th>Transacted By</th></tr></thead>
+    <tbody>
+    {% for log in logs %}
+        <tr>
+            <td>{{ log.issued_date | localdatetime }}</td>
+            <td>{{ log.consumable.item_type }}</td>
+            <td>{{ log.quantity }}</td>
+            <td><a href="{{ url_for('main.asset_detail', id=log.issued_for_asset.id) }}">{{ log.issued_for_asset.asset_tag }}</a></td>
+            <td>{{ log.issued_for_asset.assigned_to }}</td>
+            <td>{{ log.transaction_type }}</td>
+            <td>{{ log.notes }}</td>
+            <td>{{ log.issued_by.username }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>

@@ -1,0 +1,344 @@
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center">
+    <h1 class="h2">
+        Asset Details: {{ asset.asset_tag }}
+         <span class="badge {{ get_status_badge_class(asset.status) }} rounded-circle p-2 ms-2"
+               data-bs-toggle="tooltip"
+               data-bs-placement="top"
+               title="{{ asset.status }}">
+             <i class="{{ get_status_icon_class(asset.status) }} fs-5"></i>
+        </span>
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        {% if current_user.role in ['Super Admin', 'Store Manager'] %}
+                    <a href="{{ url_for('main.edit_asset', id=asset.id) }}" class="btn btn-outline-primary me-2">
+                        <i class="bi bi-pencil-square me-1"></i> Edit Asset
+                    </a>
+                    <!-- <button type="button" class="btn btn-outline-warning me-2"
+                    data-bs-toggle="modal"
+                    data-bs-target="#confirmModal"
+                    data-form-action="{{ url_for('admin.archive_asset', id=asset.id) }}"
+                    data-modal-title="Confirm Archive"
+                    data-modal-body="Are you sure you want to archive the asset '{{ asset.asset_tag }}'? This will hide it from all main views."
+                    data-modal-button-text="Archive"
+                    data-modal-button-class="btn-warning">
+                <i class="bi bi-archive-fill me-1"></i> Archive
+            </button> -->
+        {% endif %}
+        <a href="{{ url_for('main.assets') }}" class="btn btn-outline-secondary me-2">
+            <i class="bi bi-arrow-left-circle me-1"></i> Back
+        </a>
+    </div>
+</div>
+{% endblock %}
+{% block content %}
+
+<div class="row">
+    <!-- Asset Info -->
+    <div class="col-md-6">
+        <h4>Core Information</h4>
+        <table class="table">
+            <tr><th>Category</th><td>{{ asset.category.name if asset.category else 'N/A' }}</td></tr>
+            <tr><th>Make/Model</th><td>{{ asset.make_model }}</td></tr>
+            {% if asset.category.name in ['Laptop', 'Desktop'] %}
+                <tr><th>Processor</th><td>{{ asset.processor_type }} @ {{ asset.processor_speed }}</td></tr>
+                <tr><th>RAM</th><td>{{ asset.ram_size }}</td></tr>
+                <tr><th>Storage</th><td>{{ asset.storage_size }} {{ asset.storage_type }}</td></tr>
+            {% else %}
+            <tr><th>Specifications</th><td>{{ asset.specs }}</td></tr>
+            {% endif %}
+            <tr><th>Serial Number</th><td>{{ asset.serial_number }}</td></tr>
+            <tr><th>Location</th><td>{{ asset.room.facility.name }} - {{ asset.room.name }}</td></tr>
+            <tr><th>Owner</th><td>{{ asset.owner.name }}</td></tr>
+            <tr><th>Supplier</th><td>{{ asset.supplier.name if asset.supplier else 'Unknown' }}</td></tr>
+            <tr><th>Department</th><td>{{ asset.department if asset.department else 'Unknown'  }}</td></tr>
+        </table>
+         {% if asset.disposal_notes %}
+        <div class="alert alert-warning">
+            <h5 class="alert-heading"><i class="bi bi-info-circle-fill me-2"></i>Disposal/Loss Notes</h5>
+            <p class="mb-0">{{ asset.disposal_notes }}</p>
+        </div>
+        {% endif %}
+
+        <h4>Financials</h4>
+        <table class="table">
+            <tr><th>Purchase Date</th><td>{{ asset.purchase_date.strftime('%Y-%m-%d') if asset.purchase_date }}</td></tr>
+            <tr><th>Warranty</th><td>{{ asset.warranty_period }} months</td></tr>
+            <tr><th>Warranty Expiry</th>
+                <td>
+                    {{ asset.warranty_expiry_date.strftime('%Y-%m-%d') if asset.warranty_expiry_date else 'N/A' }}
+                    {% if asset.warranty_status != "Unknown" %}
+                    <span class="badge rounded-pill
+                        {% if asset.warranty_status == 'Active' %}text-bg-success
+                        {% elif asset.warranty_status == 'Expiring Soon' %}text-bg-warning
+                        {% elif asset.warranty_status == 'Expired' %}text-bg-danger
+                        {% endif %} ms-2">{{ asset.warranty_status }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr><th>Purchase Cost</th><td>${{ "%.2f"|format(asset.purchase_cost) if asset.purchase_cost }}</td></tr>
+            <tr><th>Total Repair Cost</th><td>${{ "%.2f"|format(asset.total_repair_cost) }}</td></tr>
+            <!--<tr class="table-info"><th>Total Cost of Ownership</th><td><b>${{ "%.2f"|format(asset.total_cost_of_ownership) }}</b></td></tr> -->
+        </table>
+    </div>
+
+    <!-- Actions -->
+    <div class="col-md-6">
+        {% if asset.status != 'Lost' and current_user.role in ['Super Admin', 'Store Manager'] %}
+        <!-- Move Asset Form -->
+        <div class="card mb-4">
+            <div class="card-header">Move Asset</div>
+            <div class="card-body">
+                <form action="{{ url_for('main.asset_detail', id=asset.id) }}" method="post" novalidate>
+                    {{ move_form.hidden_tag() }}
+                     <div class="mb-3">
+                        {{ move_form.to_room.label(class="form-label") }}
+                        {{ move_form.to_room(class="form-control", id="to_room_select") }}
+                        {% for error in move_form.to_room.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ move_form.new_owner.label(class="form-label") }}
+                        {{ move_form.new_owner(class="form-control", id="new_owner_select") }}
+                        {% for error in move_form.new_owner.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ move_form.reason.label(class="form-label") }}
+                        {{ move_form.reason(class="form-control") }}
+                         {% for error in move_form.reason.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+                    {{ move_form.submit(class="btn btn-primary") }}
+                </form>
+            </div>
+        </div>
+        <!-- Repair Log Form -->
+        <div class="card">
+            <div class="card-header">Log a Repair Issue</div>
+            <div class="card-body">
+                <form action="{{ url_for('main.add_repair', id=asset.id) }}" method="post">
+                    {{ initial_repair_form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ initial_repair_form.problem_description.label(class="form-label") }}
+                        {{ initial_repair_form.problem_description(class="form-control", rows=4) }}
+                    </div>
+                    {{ initial_repair_form.submit(class="btn btn-warning") }}
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- History Logs -->
+<div class="row mt-4">
+    <!-- Movement History -->
+    <div class="col-md-6">
+        <h4>Movement History ({{ movements|length }})</h4>
+        <ul class="list-group">
+            {% for move in movements %}
+            <li class="list-group-item">
+               Moved on <b>{{ move.movement_date|localdatetime }}</b> by <b>{{ move.moved_by.username }}</b><br>
+                From: <span class="text-muted">{{ move.from_room.facility.name }} - {{ move.from_room.name if move.from_room else 'Initial Assignment' }}</span><br>
+                To: <b>{{ move.to_room.facility.name }} - {{ move.to_room.name }}</b><br>
+                Reason: {{ move.reason }}
+            </li>
+            {% else %}
+            <li class="list-group-item">No movement history found.</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <!-- OWNERSHIP HISTORY SECTION -->
+    <div class="col-md-6">
+        <h4>Ownership History ({{ ownership_logs|length }})</h4>
+        <ul class="list-group">
+            <li class="list-group-item">
+                Current Owner: <strong>{{ asset.owner.name if asset.owner else 'Unassigned' }}</strong>
+            </li>
+            {% for log in ownership_logs %}
+            <li class="list-group-item">
+                Assigned to <b>{{ log.new_owner.name }}</b> from <b>{{ log.previous_owner.name if log.previous_owner else 'Unassigned' }}</b><br>
+                <small class="text-muted">
+                    On {{ log.change_date | localdatetime }} by {{ log.changed_by.username }}
+                </small>
+            </li>
+            {% else %}
+            <li class="list-group-item">No ownership change history found.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Repair History -->
+    <div class="col-md-6">
+
+    <h4>Repair History ({{ repairs|length }})</h4>
+        <ul class="list-group">
+            {% for repair in repairs %}
+            <li class="list-group-item">
+
+               Reported on <b>{{ repair.report_date|localdatetime('%Y-%m-%d') }}</b> | Status:
+                <span class="badge
+                    {% if repair.status == 'Completed' %}bg-success
+                    {% elif repair.status == 'In Progress' %}bg-warning text-dark
+                    {% elif repair.status == 'Cancelled' %}bg-secondary
+                    {% else %}bg-info text-dark{% endif %}">
+                    {{ repair.status }}
+                </span>
+                <br>
+                Cost: <b>${{ "%.2f"|format(repair.cost) if repair.cost }}</b> | Technician: {{ repair.technician.name if repair.technician else 'N/A' }}<br>
+                Problem: {{ repair.problem_description }}<br>
+                {% if repair.cancellation_reason %}
+                Cancellation Reason: <span class="text-muted"> {{ repair.cancellation_reason }}</span> <br>
+                {% endif%}
+                Replaced Parts: <span class="text-muted">{{ repair.replaced_parts or 'N/A' }}</span>
+            </li>
+            {% else %}
+            <li class="list-group-item">No repair history found.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+
+    <div class="col-md-6">
+        <h4>Attached Consumables</h4>
+        {% if asset.linked_consumables %}
+        <ul class="list-group">
+            {% for link in asset.linked_consumables %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <b>{{ link.quantity }} x {{ link.consumable.item_type }}</b> ({{ link.consumable.make }} {{ link.consumable.model }})
+                    <br>
+                    <small class="text-muted">Installed on: {{ link.install_date.strftime('%Y-%m-%d') }}</small>
+                </div>
+                <!-- "Return" button -->
+                <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#returnConsumableModal-{{ link.id }}">
+                    Return
+                </button>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted">No consumables are currently linked to this asset.</p>
+        {% endif %}
+    </div>
+</div>
+
+        {% for link in asset.linked_consumables %}
+        <div class="modal fade" id="returnConsumableModal-{{ link.id }}" tabindex="-1">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Return Consumable</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+             <form action="{{ url_for('main.return_consumable', asset_id=asset.id, link_id=link.id) }}" method="post" novalidate>
+                 {{ return_form.hidden_tag() }}
+                 <div class="modal-body">
+                    <p><strong>Item:</strong> {{ link.consumable.item_type }} ({{ link.consumable.make }})</p>
+                    <p><strong>Currently Linked:</strong> {{ link.quantity }}</p>
+                    <hr>
+
+                    <div class="mb-3">
+                        {{ return_form.quantity.label(class="form-label") }}
+
+                        {{ return_form.quantity(class="form-control", value=link.quantity, min=1, max=link.quantity) }}
+                        {% for error in return_form.quantity.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ return_form.notes.label(class="form-label") }}
+                        {{ return_form.notes(class="form-control", rows=3) }}
+                        {% for error in return_form.notes.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  {{ return_form.submit(class="btn btn-primary") }}
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+{% endblock %}
+{% block scripts %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let debounceTimeout;
+    const debounceDelay = 300;
+
+
+    const roomElement = document.getElementById('to_room_select');
+    if (roomElement) {
+        const roomChoices = new Choices(roomElement, {
+            placeholder: true,
+            placeholderValue: 'Type to search for a location...',
+            removeItemButton: true,
+        });
+
+        roomElement.addEventListener('search', function(event) {
+            const searchTerm = event.detail.value;
+            clearTimeout(debounceTimeout);
+
+            if (searchTerm && searchTerm.length >= 2) {
+                debounceTimeout = setTimeout(() => {
+                    fetch(`{{ url_for('main.search_rooms') }}?q=${searchTerm}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            // The 'true' flag replaces old results
+                            roomChoices.setChoices(data, 'value', 'label', true);
+                            setTimeout(() => { roomChoices.input.element.focus(); }, 0);
+                        });
+                }, debounceDelay);
+            }
+        });
+
+        // Pre-populate with the current location
+        {% if asset.room %}
+        roomChoices.setChoices([
+            { value: '{{ asset.room_id }}', label: '{{ asset.room.facility.name }} - {{ asset.room.name }} (Current)', selected: false }
+        ]);
+        {% endif %}
+    }
+
+
+    const newOwnerElement = document.getElementById('new_owner_select');
+    if (newOwnerElement) {
+        const newOwnerChoices = new Choices(newOwnerElement, {
+            placeholder: true,
+            placeholderValue: 'Type to search for a staff member...',
+            removeItemButton: true,
+        });
+
+        newOwnerElement.addEventListener('search', function(event) {
+            const searchTerm = event.detail.value;
+            clearTimeout(debounceTimeout);
+
+            if (searchTerm && searchTerm.length >= 1) {
+                debounceTimeout = setTimeout(() => {
+                    fetch(`{{ url_for('main.search_staff') }}?q=${searchTerm}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            newOwnerChoices.setChoices(data, 'value', 'label', true);
+                            setTimeout(() => { newOwnerChoices.input.element.focus(); }, 0);
+                        });
+                }, debounceDelay);
+            }
+        });
+
+        // Pre-populate with the current owner.
+        {% if asset.owner %}
+        newOwnerChoices.setChoices([
+            { value: '{{ asset.owner_id }}', label: '{{ asset.owner.name }}', selected: true }
+        ]);
+        {% endif %}
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block page_header %}
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center">
+    <h1 class="h2">Archived Assets</h1>
+
+</div>
+{% endblock %}
+{% block content %}
+<div class="alert alert-warning">These assets are hidden from all standard views and reports. They can be restored or permanently deleted.</div>
+<table class="table table-hover">
+    <thead>
+    <tr>
+        <th>Asset Tag</th>
+        <th>Category</th>
+        <th>Make/Model</th>
+        <th>Location</th>
+        <th>Status</th>
+        <th>Purchase Date</th>
+        <th>Warranty Status</th>
+        <th>Action</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for asset in assets %}
+        <tr>
+            <td>{{ asset.asset_tag }}</td>
+            <td>{{ asset.category.name if asset.category else 'N/A' }}</td>
+            <td>{{ asset.make_model }}</td>
+            <td>
+                {% if asset.room and asset.room.facility %}
+                    {{ asset.room.facility.name }} - {{ asset.room.name }}
+                {% elif asset.room %}
+                    {{ asset.room.name }} (No Facility)
+                {% else %}
+                    No Location Assigned
+                {% endif %}
+            </td>
+            <td>
+                <span class="badge {{ get_status_badge_class(asset.status) }} rounded-pill">
+                    {{ asset.status }}
+                </span></td>
+            <td>{{ asset.purchase_date.strftime('%Y-%m-%d') if asset.purchase_date else 'N/A' }}</td>
+            <td>
+                {% set status = asset.warranty_status %}
+                {% if status == "Active" %}
+                    <span class="badge bg-success-subtle border border-success-subtle text-success-emphasis rounded-pill">{{ status }}</span>
+                {% elif status == "Expiring Soon" %}
+                    <span class="badge bg-warning-subtle border border-warning-subtle text-warning-emphasis rounded-pill">{{ status }}</span>
+                {% elif status == "Expired" %}
+                    <span class="badge bg-danger-subtle border border-danger-subtle text-danger-emphasis rounded-pill">{{ status }}</span>
+                {% else %}
+                    <span class="badge bg-secondary-subtle border border-secondary-subtle text-secondary-emphasis rounded-pill">{{ status }}</span>
+                {% endif %}
+            </td>
+            <td>
+                <!-- Restore Button -->
+                <button type="button" class="btn btn-sm btn-outline-success"
+                        data-bs-toggle="modal"
+                        data-bs-target="#confirmModal"
+                        data-form-action="{{ url_for('admin.restore_asset', id=asset.id) }}"
+                        data-modal-title="Confirm Restore"
+                        data-modal-body="Are you sure you want to restore the asset '{{ asset.asset_tag }}'?"
+                        data-modal-button-text="Restore"
+                        data-modal-button-class="btn-success">
+                    Restore
+                </button>
+
+                <!-- Permanent Delete Button  -->
+                <button type="button" class="btn btn-sm btn-danger"
+                        data-bs-toggle="modal"
+                        data-bs-target="#confirmModal"
+                        data-form-action="{{ url_for('admin.delete_asset_permanent', id=asset.id) }}"
+                        data-modal-title="<i class='bi bi-exclamation-triangle-fill text-danger'></i> Confirm Permanent Deletion"
+                        data-modal-body="WARNING: This action is irreversible and will permanently delete all records for '{{ asset.asset_tag }}'. Are you absolutely sure?"
+                        data-modal-button-text="Delete Permanently"
+                        data-modal-button-class="btn-danger">
+                    Delete Permanently
+                </button>
+            </td>
+
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

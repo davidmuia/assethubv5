@@ -1,0 +1,23 @@
+<div class="report-header">
+    <div>
+        <h4>{{ report_title }}</h4>
+        <p class="text-muted small mb-0">Warranty status overview.</p>
+    </div>
+    <div class="report-export-buttons"></div>
+</div>
+<hr>
+<table class="table table-sm table-striped datatable" style="width:100%">
+    <thead>
+        <tr><th>Asset Tag</th><th>Make/Model</th><th>Current Owner</th><th>Warranty Expiry Date</th></tr>
+    </thead>
+    <tbody>
+        {% for asset in assets %}
+        <tr>
+            <td><a href="{{ url_for('main.asset_detail', id=asset.id) }}">{{ asset.asset_tag }}</a></td>
+            <td>{{ asset.make_model }}</td>
+            <td>{{ asset.owner.name if asset.owner else 'Unassigned' }}</td>
+            <td>{{ asset.warranty_expiry_date.strftime('%Y-%m-%d') if asset.warranty_expiry_date }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

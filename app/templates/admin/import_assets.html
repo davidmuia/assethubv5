@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center">
+    <h1 class="h2">{{ title }}</h1>
+    <a href="{{ url_for('main.assets') }}" class="btn btn-outline-primary me-2">
+        <i class="bi bi-arrow-left-circle me-1"></i> Back to Assets
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                Upload CSV File
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Select CSV file to import</label>
+                        <input class="form-control" type="file" id="file" name="file" accept=".csv" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-upload me-1"></i> Upload and Process
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">Instructions</div>
+            <div class="card-body">
+                <p>Follow these steps to bulk import assets:</p>
+                <ol>
+                    <li>Download the CSV template.
+                        <a href="{{ url_for('static', filename='templates/import_template.csv') }}" class="btn btn-sm btn-outline-success d-block mt-1">
+                            <i class="bi bi-download me-1"></i> Download Template
+                        </a>
+                    </li>
+                    <li class="mt-2">Fill in the asset data. Ensure all <strong>required*</strong> columns are completed.</li>
+                    <li>Save the file as a CSV.</li>
+                    <li>Upload the file using the form on this page.</li>
+                </ol>
+                <hr>
+                <p class="small text-muted"><strong>Important:</strong> The import is "all or nothing". If a single row contains an error, the entire import will be cancelled to prevent partial data entry.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col">
+        <h4>CSV Column Reference</h4>
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered">
+                <thead class="table-light">
+                    <tr><th>Column Name</th><th>Required?</th><th>Notes</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>asset_tag</td><td><strong>Yes*</strong></td><td>Must be unique.</td></tr>
+                    <tr><td>category</td><td><strong>Yes*</strong></td><td>e.g., Laptop, Desktop, UPS, Router</td></tr>
+                    <tr><td>status</td><td><strong>Yes*</strong></td><td>e.g., In Storage, In Use</td></tr>
+                    <tr><td>department</td><td><strong>Yes*</strong></td><td>e.g., IT, Repairs and Maintenance</td></tr>
+                    <tr><td>assigned_to</td><td><strong>Yes*</strong></td><td>Full name of the person/location assigned the asset.</td></tr>
+                    <tr><td>location_facility_name</td><td><strong>Yes*</strong></td><td>Must exactly match an existing Facility name.</td></tr>
+                    <tr><td>location_room_name</td><td><strong>Yes*</strong></td><td>Must exactly match an existing Room name within the specified Facility.</td></tr>
+                    <tr><td>purchase_date</td><td><strong>Yes*</strong></td><td>Format: YYYY-MM-DD</td></tr>
+                    <tr><td>make_model</td><td>No</td><td>e.g., Dell Latitude 5420, APC Smart-UPS</td></tr>
+                    <tr><td>serial_number</td><td>No</td><td>Must be unique if provided.</td></tr>
+                    <tr><td>purchase_cost</td><td>No</td><td>Number only, no currency symbols.</td></tr>
+                    <tr><td>warranty_period</td><td>No</td><td>Number of months.</td></tr>
+                    <tr><td>supplier_name</td><td>No</td><td>Must exactly match an existing Vendor name. If not found, a new vendor will be created.</td></tr>
+                    <tr class="table-info"><td colspan="3"><strong>Computer-Specific Columns (Required for Laptops/Desktops)</strong></td></tr>
+                    <tr><td>processor_type</td><td><em>If Computer</em></td><td>e.g., i5, i7, Ryzen 5</td></tr>
+                    <tr><td>processor_speed</td><td>No</td><td>e.g., 2.4GHz</td></tr>
+                    <tr><td>ram_size</td><td><em>If Computer</em></td><td>e.g., 8GB, 16GB</td></tr>
+                    <tr><td>storage_size</td><td><em>If Computer</em></td><td>e.g., 256GB, 1TB</td></tr>
+                    <tr><td>storage_type</td><td><em>If Computer</em></td><td>Must be 'SSD' or 'HDD'.</td></tr>
+                    <tr class="table-info"><td colspan="3"><strong>Non-Computer Column</strong></td></tr>
+                    <tr><td>specs</td><td><em>If Not Computer</em></td><td>A text description of other specs (e.g., "1500VA, 900W Output").</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

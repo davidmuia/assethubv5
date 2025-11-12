@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block page_header %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ title }}</h1>
+
+    <a href="{{ url_for('admin.manage_suppliers') }}" class="btn btn-outline-danger me-2">
+            <i class="bi bi-x-lg me-1"></i> Cancel
+    </a>
+</div>
+{% endblock %}
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <form method="post" novalidate>
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                {{ form.name.label(class="form-label") }}
+                {{ form.name(class="form-control") }}
+                {% for error in form.name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="mb-3">
+                {{ form.contact_person.label(class="form-label") }}
+                {{ form.contact_person(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.phone_number.label(class="form-label") }}
+                {{ form.phone_number(class="form-control") }}
+                {% for error in form.phone_number.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            </div>
+            <p>{{ form.submit(class="btn btn-primary w-100 mt-3") }}</p>
+        </form>
+    </div>
+</div>
+{% endblock %}

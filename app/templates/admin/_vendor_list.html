@@ -1,0 +1,22 @@
+<table class="table table-hover">
+    <thead><tr><th>Name</th><th>Contact Person</th><th>Phone</th><th>Actions</th></tr></thead>
+    <tbody>
+    {% for vendor in vendors %}
+    <tr>
+        <td>{{ vendor.name }}</td>
+        <td>{{ vendor.contact_person or 'N/A' }}</td>
+        <td>{{ vendor.phone_number or 'N/A' }}</td>
+        <td>
+            <a href="{{ url_for('admin.edit_vendor', id=vendor.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+            <button type="button" class="btn btn-sm btn-outline-danger"
+                    data-bs-toggle="modal"
+                    data-bs-target="#confirmModal"
+                    data-form-action="{{ url_for('admin.delete_vendor', id=vendor.id) }}"
+                    data-modal-body="Are you sure you want to delete the supplier '{{ vendor.name }}'?">
+                Delete
+            </button>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>

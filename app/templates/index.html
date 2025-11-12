@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block page_header %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center">
+    <h1 class="h2">Dashboard</h1>
+</div>
+{% endblock %}
+{% block content %}
+
+<div class="row g-4">
+
+    <!-- Card 1: Total Assets -->
+    <div class="col-md-6 col-lg-3">
+        <a href="{{ url_for('main.assets') }}" class="text-decoration-none dashboard-card-link">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-info-subtle d-flex align-items-center">
+                    <i class="bi bi-hdd-stack-fill fs-4 me-2 text-primary-emphasis"></i>
+                    <h5 class="mb-0 text-primary-emphasis">Total Assets</h5>
+                </div>
+                <div class="card-body text-center">
+                    <p class="display-3 fw-bold">{{ total_assets }}</p>
+                </div>
+                 <div class="card-footer text-center">
+                    View All
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Card 2: Awaiting Repair -->
+    <div class="col-md-6 col-lg-3">
+        <a href="{{ url_for('main.assets', status='Awaiting Repair') }}" class="text-decoration-none dashboard-card-link">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-info-subtle d-flex align-items-center">
+                    <i class="bi bi-tools fs-4 me-2 text-info-emphasis"></i>
+                    <h5 class="mb-0 text-info-emphasis">Awaiting Repair</h5>
+                </div>
+                <div class="card-body text-center">
+                    <p class="display-3 fw-bold">{{ assets_awaiting_repair }}</p>
+                </div>
+                 <div class="card-footer text-center">
+                    View List
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Card 3: In Repair -->
+    <div class="col-md-6 col-lg-3">
+        <a href="{{ url_for('main.assets', status='In Repair') }}" class="text-decoration-none dashboard-card-link">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-warning-subtle d-flex align-items-center">
+                    <i class="bi bi-gear-wide-connected fs-4 me-2 text-warning-emphasis"></i>
+                    <h5 class="mb-0 text-warning-emphasis">In Repair</h5>
+                </div>
+                <div class="card-body text-center">
+                    <p class="display-3 fw-bold">{{ assets_in_repair }}</p>
+                </div>
+                <div class="card-footer text-center">
+                    View List
+                </div>
+            </div>
+        </a>
+    </div>
+        <!-- Card 4: Proposed for Retirement -->
+    <div class="col-md-6 col-lg-3">
+            <a href="{{ url_for('reports.asset_data_explorer') }}#proposed" class="text-decoration-none dashboard-card-link">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-warning-subtle d-flex align-items-center">
+                        <i class="bi bi-box-arrow-in-down-right fs-4 me-2 text-warning-emphasis"></i>
+                        <h5 class="mb-0 text-warning-emphasis">Proposed for Retirement</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <p class="display-3 fw-bold">{{ proposed_for_retirement }}</p>
+                    </div>
+                     <div class="card-footer text-center">
+                        View List
+                    </div>
+                </div>
+            </a>
+        </div>
+    <!-- Card 5: Retired Assets -->
+    <div class="col-md-6 col-lg-3">
+        <a href="{{ url_for('main.assets', status='Retired') }}" class="text-decoration-none dashboard-card-link">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-secondary-subtle d-flex align-items-center">
+                    <i class="bi bi-trash2-fill fs-4 me-2 text-secondary-emphasis"></i>
+                    <h5 class="mb-0 text-secondary-emphasis">Retired Assets</h5>
+                </div>
+                <div class="card-body text-center">
+                    <p class="display-3 fw-bold">{{ retired_assets }}</p>
+                </div>
+                <div class="card-footer text-center">
+                    View List
+                </div>
+            </div>
+        </a>
+    </div>
+
+        <!-- Card 6: Lost Assets -->
+    <div class="col-md-6 col-lg-3">
+        <a href="{{ url_for('main.assets', status='Lost') }}" class="text-decoration-none dashboard-card-link">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-secondary-subtle d-flex align-items-center">
+                    <i class="bi bi-question-diamond-fill fs-4 me-2 text-secondary-emphasis"></i>
+                    <h5 class="mb-0 text-secondary-emphasis">Lost Assets</h5>
+                </div>
+                <div class="card-body text-center">
+                    <p class="display-3 fw-bold">{{ lost_assets }}</p>
+                </div>
+                <div class="card-footer text-center">
+                    View List
+                </div>
+            </div>
+        </a>
+    </div>
+    <!-- Card for Low Stock -->
+    <div class="col-md-6 col-lg-3">
+        <a href="{{ url_for('admin.manage_consumables') }}" class="text-decoration-none dashboard-card-link">
+            <div class="card shadow-sm h-100 {% if low_stock_items > 0 %}bg-danger-subtle{% else %}bg-success-subtle{% endif %}">
+                <div class="card-header d-flex align-items-center">
+                    <i class="bi bi-exclamation-triangle-fill fs-4 me-2"></i>
+                    <h5 class="mb-0">Low Stock Alerts</h5>
+                </div>
+                <div class="card-body text-center">
+                    <p class="display-3 fw-bold">{{ low_stock_items }}</p>
+                </div>
+                 <div class="card-footer text-center">
+                    Manage Stock
+                </div>
+            </div>
+        </a>
+    </div>
+    <!-- Card for Warranty status -->
+    <div class="col-md-6 col-lg-3">
+    <a href="{{ url_for('reports.asset_data_explorer') }}" class="text-decoration-none dashboard-card-link">
+        <div class="card shadow-sm h-100 {% if (expiring_soon_count + expired_count) > 0 %}bg-danger-subtle{% else %}bg-success-subtle{% endif %}">
+            <div class="card-header d-flex align-items-center">
+                <i class="bi bi-shield-slash-fill fs-4 me-2 text-danger-emphasis"></i>
+                <h5 class="mb-0 text-danger-emphasis">Warranty Alerts</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
+                        Expiring Soon
+                        <span class="badge bg-warning text-dark rounded-pill fs-6">{{ expiring_soon_count }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
+                        Expired
+                        <span class="badge bg-danger rounded-pill fs-6">{{ expired_count }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </a>
+</div>
+
+</div>
+
+<!-- Quick Actions Section -->
+<div class="row mt-5">
+    <div class="col">
+        <h2>Quick Actions</h2>
+        <p>
+            <a href="{{ url_for('main.assets') }}" class="btn btn-lg btn-success">
+                <i class="bi bi-card-list me-1"></i> View All Assets
+            </a>
+            {% if current_user.role in ['Super Admin', 'Store Manager'] %}
+            <a href="{{ url_for('main.new_asset') }}" class="btn btn-lg btn-info">
+                <i class="bi bi-plus-circle me-1"></i> Register a New Asset
+            </a>
+            {% endif %}
+        </p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,22 @@
+<table class="table table-hover">
+    <thead><tr><th>Name</th><th>Contact Person</th><th>Phone</th><th>Actions</th></tr></thead>
+    <tbody>
+    {% for tech in technicians %}
+    <tr>
+        <td>{{ tech.name }}</td>
+        <td>{{ tech.contact_person or 'N/A' }}</td>
+        <td>{{ tech.phone_number }}</td>
+        <td>
+            <a href="{{ url_for('admin.edit_technician', id=tech.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+            <button type="button" class="btn btn-sm btn-outline-danger"
+                    data-bs-toggle="modal"
+                    data-bs-target="#confirmModal"
+                    data-form-action="{{ url_for('admin.delete_technician', id=tech.id) }}"
+                    data-modal-body="Are you sure you want to delete the technician '{{ tech.name }}'?">
+                Delete
+            </button>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>

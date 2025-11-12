@@ -1,0 +1,27 @@
+<div class="report-header">
+    <div>
+        <h4>Current Consumable Stock Levels</h4>
+        </div>
+    <div class="report-export-buttons"></div>
+</div>
+<hr>
+<table class="table table-sm table-striped datatable" style="width:100%">
+    <thead><tr><th>Category</th><th>Item</th><th>Qty in Stock</th><th>Reorder Level</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for item in stock %}
+        <tr>
+            <td>{{ item.category }}</td>
+            <td>{{ item.item_type }} ({{ item.make }} {{ item.model }})</td>
+            <td>{{ item.qty_in_stock }}</td>
+            <td>{{ item.reorder_level }}</td>
+            <td>
+                {% if item.qty_in_stock <= item.reorder_level %}
+                    <span class="badge text-bg-danger">Low Stock</span>
+                {% else %}
+                    <span class="badge text-bg-success">OK</span>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>

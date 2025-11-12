@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center">
+    <h1 class="h2">Asset Registry</h1>
+    <div class="btn-toolbar">
+        <p>
+        <a href="{{ url_for('main.new_asset') }}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-plus-circle me-1"></i> Add New
+        </a>
+        <a href="{{ url_for('admin.import_assets') }}"class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-upload me-2"></i> Import</a>
+        <a href="{{ url_for('main.export_assets') }}" class="btn btn-sm btn-success">
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export to CSV
+        </a>
+        </p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('main.assets') }}" class="row g-2 align-items-end">
+            <div class="col-md-3">
+
+                <input type="text" name="q" id="q" class="form-control form-control-sm" placeholder="Tag, Model, Owner..." value="{{ search_values.q or '' }}">
+            </div>
+            <div class="col-md-2">
+
+                <select name="facility_id" id="facility_id" class="form-select form-select-sm">
+                    <option value="">All Facilities</option>
+                    {% for facility in facilities %}
+                        <option value="{{ facility.id }}" {% if search_values.facility_id == facility.id %}selected{% endif %}>
+                            {{ facility.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+
+                <select name="category_id" id="category_id" class="form-select form-select-sm">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}" {% if search_values.category_id == category.id %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+
+                <select name="department" id="department" class="form-select form-select-sm">
+                    <option value="">All Departments</option>
+                    {% for dept_val, dept_text in department_choices %}
+                        <option value="{{ dept_val }}" {% if search_values.department == dept_val %}selected{% endif %}>
+                            {{ dept_text }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+
+                <select name="status" id="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    {% for status_val, status_text in status_choices %}
+                        <option value="{{ status_val }}" {% if search_values.status == status_val %}selected{% endif %}>
+                            {{ status_text }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Search and Filter Form -->
+
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Asset Tag</th>
+                <th>Category</th>
+                <th>Make/Model</th>
+                <th>Location</th>
+                
+                <th>Owner</th>
+                <th>Status</th>
+                <th>Warranty</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for asset in assets.items %}
+            <tr>
+                <td>{{ asset.asset_tag }}</td>
+                <td>{{ asset.category.name if asset.category else 'N/A' }}</td>
+                <td>{{ asset.make_model }}</td>
+                <td>{{ asset.room.facility.name if asset.room }} - {{ asset.room.name if asset.room }}</td>
+                
+                <td>{{ asset.owner.name if asset.owner else 'Unassigned' }}</td>
+                <td><span class="badge {{ get_status_badge_class(asset.status) }}">{{ asset.status }}</span></td>
+                <td>
+                    {% set w_status = asset.warranty_status %}
+                    {% if w_status == "Active" %}<span class="badge text-bg-success">{{ w_status }}</span>
+                    {% elif w_status == "Expiring Soon" %}<span class="badge text-bg-warning">{{ w_status }}</span>
+                    {% elif w_status == "Expired" %}<span class="badge text-bg-danger">{{ w_status }}</span>
+                    {% else %}<span class="badge text-bg-secondary">{{ w_status }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('main.asset_detail', id=asset.id) }}" class="btn btn-sm btn-info">View</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="9" class="text-center">No assets found matching your criteria.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination (using the final, correct pattern) -->
+{% if assets.pages > 1 %}
+<nav aria-label="Asset pagination">
+    <ul class="pagination justify-content-center">
+        <li class="page-item {% if not assets.has_prev %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('main.assets', page=assets.prev_num, **pagination_args) }}">Previous</a>
+        </li>
+        {% for page_num in assets.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if page_num %}
+                <li class="page-item {% if page_num == assets.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('main.assets', page=page_num, **pagination_args) }}">{{ page_num }}</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+        {% endfor %}
+        <li class="page-item {% if not assets.has_next %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('main.assets', page=assets.next_num, **pagination_args) }}">Next</a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+{% endblock %}

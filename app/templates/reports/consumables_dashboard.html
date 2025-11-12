@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center">
+    <h1 class="h2">Interactive Consumables Dashboard</h1>
+    <a href="{{ url_for('reports.consumable_data_explorer') }}" class="btn btn-outline-secondary me-1">
+            <i class="bi bi-table me-1"></i>   Go to Data Explorer
+        </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- FILTER CONTROLS -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="consumableSlicer" class="form-label fw-bold"><i class="bi bi-funnel me-1"></i>Filter by Consumable</label>
+
+                <select id="consumableSlicer"></select>
+            </div>
+            <div class="col-md-5">
+                <div class="row g-2">
+                    <div class="col-sm-6">
+                        <label for="startDate" class="form-label fw-bold">Start Date</label>
+                        <input type="date" class="form-control" id="startDate">
+                    </div>
+                    <div class="col-sm-6">
+                        <label for="endDate" class="form-label fw-bold">End Date</label>
+                        <input type="date" class="form-control" id="endDate">
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="d-grid gap-2 d-md-flex">
+                    <button id="applyFilterBtn" class="btn btn-primary flex-grow-1"><i class="bi bi-check-lg me-1"></i>Apply</button>
+                    <button id="clearFilterBtn" class="btn btn-outline-secondary flex-grow-1">Clear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- CHARTS ROW 1 -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm h-100">
+            <div class="card-header" id="consumptionChartTitle">Total Consumption by Facility</div>
+            <div class="card-body" style="height: 320px;"><canvas id="consumptionByFacilityChart"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header">Top 10 Fast-Moving Consumables</div>
+            <div class="card-body" style="height: 320px;"><canvas id="topMovingChart"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<!-- CHARTS ROW 2 -->
+<div class="row g-4">
+
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header">Stock Level vs. Reorder Level (Top 10 Critical Items)</div>
+            <div class="card-body" style="height: 320px;"><canvas id="stockVsReorderChart"></canvas></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // --- 1. SETUP: GRAB ALL HTML ELEMENTS ---
+    const startDateInput = $('#startDate');
+    const endDateInput = $('#endDate');
+    const applyFilterBtn = $('#applyFilterBtn');
+    const clearFilterBtn = $('#clearFilterBtn');
+    const consumptionChartTitle = $('#consumptionChartTitle');
+    const slicerElement = document.getElementById('consumableSlicer');
+
+    let charts = {}; // To store chart instances
+    let consumableSlicerChoices; // To store the Choices.js instance
+
+    // --- 2. DEFINE HELPER FUNCTIONS ---
+
+    /**
+     * Sets the date inputs to the last 3 months.
+     */
+    function setDefaultDates() {
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setMonth(startDate.getMonth() - 3);
+        const formatDate = (date) => date.toISOString().split('T')[0];
+
+        endDateInput.val(formatDate(endDate));
+        startDateInput.val(formatDate(startDate));
+    }
+
+    /**
+     * The main function to create or update a single chart.
+     */
+    function updateChart(chartId, type, url, chartDataConfig, chartOptions = {}) {
+        const ctx = document.getElementById(chartId);
+        if (!ctx) return;
+        if (charts[chartId]) charts[chartId].destroy();
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.labels && data.labels.length > 0) {
+                    charts[chartId] = new Chart(ctx, {
+                        type: type,
+                        data: {
+                            labels: data.labels,
+                            datasets: chartDataConfig(data)
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            ...chartOptions
+                        }
+                    });
+                } else {
+                    const context = ctx.getContext('2d');
+                    context.clearRect(0, 0, ctx.width, ctx.height);
+                    context.textAlign = 'center';
+                    context.textBaseline = 'middle';
+                    context.fillStyle = '#6c757d';
+                    context.fillText('No data available for this period.', ctx.width / 2, ctx.height / 2);
+                }
+            });
+    }
+
+    /**
+     * A single function to update all charts on the page based on the current filters.
+     */
+    function updateAllCharts() {
+        const startDate = startDateInput.val();
+        const endDate = endDateInput.val();
+        let consumableId = consumableSlicerChoices ? consumableSlicerChoices.getValue(true) : null;
+
+        let consumableLabel = 'All Consumables';
+        if (consumableSlicerChoices) {
+            const selectedItem = consumableSlicerChoices.getValue();
+            if (selectedItem && selectedItem.value) {
+                consumableLabel = selectedItem.label;
+            }
+        }
+
+        const params = new URLSearchParams();
+        if (startDate) params.set('start_date', startDate);
+        if (endDate) params.set('end_date', endDate);
+        if (consumableId) params.set('consumable_id', consumableId);
+        const paramString = params.toString();
+
+        // --- Call updateChart for each chart ---
+
+        // Consumption Chart (with tooltips)
+        const consumptionUrl = `{{ url_for("reports.data_consumption_by_facility") }}?${paramString}`;
+        updateChart('consumptionByFacilityChart', 'bar', consumptionUrl,
+            (data) => [{
+                label: 'Total Items Issued',
+                data: data.data,
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                tooltipDetails: data.tooltip_details
+            }],
+            {
+                scales: { y: { beginAtZero: true } },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            afterBody: (context) => {
+                                const dataIndex = context[0].dataIndex;
+                                const dataset = context[0].chart.data.datasets[0];
+                                return dataset.tooltipDetails ? dataset.tooltipDetails[dataIndex] : '';
+                            },
+                            label: (context) => `Total Issued: ${context.raw}`
+                        }
+                    }
+                }
+            }
+        );
+        consumptionChartTitle.text(`Consumption for: ${consumableLabel || 'All Items'}`);
+        updateChart('stockVsReorderChart', 'bar', '{{ url_for("reports.data_stock_vs_reorder") }}',
+            (data) => [
+                { label: 'Qty In Stock', data: data.stock_data, backgroundColor: 'rgba(54, 162, 235, 0.6)' },
+                { label: 'Reorder Level', data: data.reorder_data, backgroundColor: 'rgba(255, 99, 132, 0.6)' }
+            ],
+            { scales: { y: { beginAtZero: true } } }
+        );
+
+
+        // Top Moving Chart
+       const topMovingUrl = `{{ url_for("reports.data_top_moving_consumables") }}?${params}`;
+        updateChart('topMovingChart', 'bar', topMovingUrl,
+            (data) => [{ label: '# Issued', data: data.data, backgroundColor: 'rgba(75, 192, 192, 0.6)' }],
+            { indexAxis: 'y', plugins: { legend: { display: false } } }
+        );
+    }
+
+    // --- 3. INITIALIZE INTERACTIVE ELEMENTS ---
+
+    if (slicerElement) {
+        consumableSlicerChoices = new Choices(slicerElement, {
+            placeholder: true,
+            placeholderValue: 'All Consumables (Type to search...)',
+            removeItemButton: true
+        });
+
+        let debounceTimeout;
+        slicerElement.addEventListener('search', function(event) {
+            const searchTerm = event.detail.value;
+            clearTimeout(debounceTimeout);
+            if (searchTerm && searchTerm.length >= 2) {
+                debounceTimeout = setTimeout(() => {
+                    fetch(`{{ url_for('reports.data_search_consumable_stock') }}?q=${searchTerm}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const choicesWithAll = [{ value: '', label: 'All Consumables' }].concat(data);
+                            consumableSlicerChoices.setChoices(choicesWithAll, 'value', 'label', true);
+                        });
+                }, 300);
+            }
+        });
+        consumableSlicerChoices.setChoices([{ value: '', label: 'All Consumables', selected: true }]);
+    }
+
+    // --- 4. ATTACH EVENT LISTENERS ---
+    applyFilterBtn.on('click', updateAllCharts);
+    clearFilterBtn.on('click', function() {
+        setDefaultDates();
+        if (consumableSlicerChoices) {
+            consumableSlicerChoices.clearStore();
+            consumableSlicerChoices.clearInput();
+            consumableSlicerChoices.setChoices([{ value: '', label: 'All Consumables', selected: true }]);
+        }
+        updateAllCharts();
+    });
+
+    // --- 5. INITIAL PAGE LOAD ---
+    setDefaultDates(); // Set the default dates first
+    updateAllCharts(); // Then load the charts with those dates
+});
+</script>
+{% endblock %}

@@ -1,0 +1,27 @@
+<div class="report-header">
+    <div>
+       <h4>{{ report_title }}</h4>
+    </div>
+    <div class="report-export-buttons"></div>
+</div>
+<hr>
+<table class="table table-sm table-striped datatable" style="width:100%">
+    <thead>
+        <tr>
+            <th>Asset Tag</th>
+            <th>Make/Model</th>
+            <th>Last Owner</th>
+            <th>Reason / Notes</th>
+        </tr>
+    </thead>
+    <tbody>
+      {% for asset in assets %}
+        <tr>
+            <td><a href="{{ url_for('main.asset_detail', id=asset.id) }}">{{ asset.asset_tag }}</a></td>
+            <td>{{ asset.make_model }}</td>
+            <td>{{ asset.owner.name if asset.owner else 'Unassigned' }}</td>
+            <td>{{ asset.disposal_notes or 'N/A' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

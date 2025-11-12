@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center">
+    <h1 class="h2">{{ title }}</h1>
+    <a href="{{ url_for('admin.manage_consumables') }}" class="btn btn-sm btn-outline-danger">
+        <i class="bi bi-x-lg me-1"></i> Cancel
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <p class="text-muted small">A "Consumable" is a unique type of item you keep in stock, like "Logitech Wireless Mouse MK270". You can then issue these items to users or link them to assets.</p>
+                    <hr>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.category.label(class="form-label") }}
+                            {{ form.category(class="form-control") }}
+                            {% for error in form.category.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.item_type.label(class="form-label") }}
+                            {{ form.item_type(class="form-control") }}
+                            {% for error in form.item_type.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.make.label(class="form-label") }}
+                            {{ form.make(class="form-control") }}
+                            {% for error in form.make.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.model.label(class="form-label") }}
+                            {{ form.model(class="form-control") }}
+                            {% for error in form.model.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.qty_in_stock.label(class="form-label") }}
+                            {{ form.qty_in_stock(class="form-control") }}
+                            {% for error in form.qty_in_stock.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.reorder_level.label(class="form-label") }}
+                            {{ form.reorder_level(class="form-control") }}
+                             <div class="form-text">You will be alerted on the dashboard when stock quantity is at or below this level.</div>
+                            {% for error in form.reorder_level.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        {{ form.submit(class="btn btn-primary btn-lg") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

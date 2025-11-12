@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center">
+    <h1 class="h2">Asset Data Explorer</h1>
+    <a href="{{ url_for('reports.asset_reports') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-bar-chart-line-fill me-1"></i> Back to Visual Dashboard
+    </a>
+</div>
+{% endblock %}
+{% block content %}
+
+<div class="explorer-row g-4">
+
+    <!-- Filter Pane Sidebar -->
+    <div class="explorer-filter-pane pe-4"> <!-- pe-4 adds padding to the right -->
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <i class="bi bi-filter-circle-fill me-1"></i> Select a Report
+            </div>
+            <div class="list-group list-group-flush" id="report-filter-list">
+
+                <a href="{{ url_for('reports.partial_repair_cost_analysis') }}" class="list-group-item list-group-item-action">Repair Cost Analysis</a>
+                <a href="{{ url_for('reports.partial_high_risk_assets') }}" class="list-group-item list-group-item-action">High-Risk Assets</a>
+                <a href="{{ url_for('reports.partial_assets_proposed_retirement') }}" class="list-group-item list-group-item-action">Proposed for Retirement</a>
+                <a href="{{ url_for('reports.partial_assets_retired') }}" class="list-group-item list-group-item-action">Retired</a>
+                <a href="{{ url_for('reports.partial_assets_lost') }}" class="list-group-item list-group-item-action">Lost</a>
+                <a href="{{ url_for('reports.partial_warranty_expiring') }}" class="list-group-item list-group-item-action">Warranty: Expiring Soon</a>
+                <a href="{{ url_for('reports.partial_warranty_expired') }}" class="list-group-item list-group-item-action">Warranty: Expired</a>
+                <a href="{{ url_for('reports.partial_movement_history') }}" class="list-group-item list-group-item-action">Movement History</a>
+                <a href="{{ url_for('reports.partial_ownership_history') }}" class="list-group-item list-group-item-action">Ownership History</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area for the Report Table -->
+    <div class="explorer-content-pane">
+        <div class="card shadow-sm">
+            <!-- This is the precise target for our content injection -->
+            <div class="card-body" id="report-content-target">
+                <div class="text-center p-5">
+                    <h4 class="text-muted">Select a report from the left to begin.</h4>
+                    <i class="bi bi-arrow-left-circle-fill fs-1 text-muted"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    const contentTarget = $('#report-content-target');
+    const filterLinks = $('#report-filter-list a');
+    let currentDataTable = null;
+
+    filterLinks.on('click', function(e) {
+        e.preventDefault();
+        filterLinks.removeClass('active');
+        const $this = $(this);
+        $this.addClass('active');
+
+        const reportUrl = $this.attr('href');
+
+        contentTarget.html('<div class="text-center p-5"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+
+        if (currentDataTable) {
+            currentDataTable.destroy();
+        }
+
+        $.ajax({
+            url: reportUrl,
+            method: 'GET',
+            success: function(response) {
+                contentTarget.html(response);
+
+                // Get the title from the h4 tag inside the loaded partial
+                const reportTitle = contentTarget.find('h4').first().text() || 'Asset Report';
+
+                currentDataTable = contentTarget.find('.datatable').DataTable({
+                    responsive: true,
+                    // --- PART FOR EXPORT BUTTONS ---
+
+                    dom: 'Bfrtip',
+
+        buttons: [
+            { extend: 'csv', title: reportTitle, className: 'btn-sm' },
+            { extend: 'excel', title: reportTitle, className: 'btn-sm' },
+            { extend: 'pdf', title: reportTitle, orientation: 'landscape', className: 'btn-sm' },
+            { extend: 'print', text: 'Print', title: reportTitle, className: 'btn-sm' }
+        ]
+    });
+    contentTarget.find('.dt-buttons.btn-group').appendTo('#report-content-target .report-export-buttons');
+
+            },
+            error: function() {
+                contentTarget.html('<div class="alert alert-danger">Error: Could not load the report.</div>');
+            }
+        });
+    });
+
+    // Automatically load the first report on page load
+    filterLinks.first().trigger('click');
+});
+</script>
+{% endblock %}

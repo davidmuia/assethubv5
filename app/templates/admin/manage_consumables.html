@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center">
+    <h1 class="h2">{{ title }}</h1>
+    <div class="btn-toolbar">
+        <p>
+            <a href="{{ url_for('admin.add_consumable') }}" class="btn btn-outline-primary">
+                <i class="bi bi-plus-circle me-1"></i> Add New Consumable
+            </a>
+            <a href="{{ url_for('reports.consumable_reports') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-file-earmark-bar-graph me-2"></i> Consumable Reports
+            </a>
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>Category</th>
+                <th>Item Type</th>
+                <th>Make/Model</th>
+                <th class="text-center">Qty In Stock</th>
+                <th class="text-center">Reorder Level</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for item in stock %}
+            <tr>
+                <td>{{ item.category }}</td>
+                <td>{{ item.item_type }}</td>
+                <td>{{ item.make or 'N/A' }} / {{ item.model or 'N/A' }}</td>
+                <td class="text-center">{{ item.qty_in_stock }}</td>
+                <td class="text-center">{{ item.reorder_level }}</td>
+                <td>
+                    {% if item.qty_in_stock <= item.reorder_level %}
+                        <span class="badge bg-danger-subtle border border-danger-subtle text-danger-emphasis rounded-pill">Low Stock</span>
+                    {% else %}
+                        <span class="badge bg-success-subtle border border-success-subtle text-success-emphasis rounded-pill">In Stock</span>
+                    {% endif %}
+                </td>
+                <!-- ACTIONS CELL -->
+                <td>
+                    <a href="{{ url_for('admin.edit_consumable', id=item.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                    <button type="button" class="btn btn-sm btn-outline-danger"
+                    data-bs-toggle="modal"
+                    data-bs-target="#confirmModal"
+                    data-form-action="{{ url_for('admin.delete_consumable', id=item.id) }}"
+                    data-modal-body="Are you sure you want to delete the consumable '{{ item.item_type }} - {{ item.make or 'N/A' }} / {{ item.model or 'N/A' }}'?">
+                        Delete
+                    </button>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="7" class="text-center text-muted">No consumable stock items found.</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

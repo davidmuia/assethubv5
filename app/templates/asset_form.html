@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% block page_header %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center">
+    <h1 class="h2">{{ title }}</h1>
+        <a href="{{ url_for('main.assets') }}" class="btn btn-outline-danger me-2">
+            <i class="bi bi-x-lg me-1"></i> Cancel
+        </a>
+</div>
+{% endblock %}
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-7">
+        <div class="card">
+            <div class="card-body">
+                <form action="" method="post" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="row">
+                        <!-- Left Column -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.asset_tag.label(class="form-label") }}
+                                {{ form.asset_tag(class="form-control") }}
+                                {% for error in form.asset_tag.errors %}<span class="text-danger small">{{ error }}</span>{% endfor %}
+                            </div>
+                            <div class="mb-3">
+                                {{ form.category.label(class="form-label") }}
+                                {{ form.category(class="form-select",id='category-select') }}
+                                {% for error in form.category.errors %}<span class="text-danger small">{{ error }}</span>{% endfor %}
+                            </div>
+                           <div class="mb-3">
+                                {{ form.make_model.label(class="form-label") }}
+                                {{ form.make_model(class="form-control") }}
+                                {% for error in form.make_model.errors %}<span class="text-danger small">{{ error }}</span>{% endfor %}
+                            </div>
+                            <!-- Computer Specs Grid Block -->
+                            <div class="mb-3" id="computer-specs-block" style="display: none;">
+                                <div class="card">
+                                    <div class="card-header">
+                                        Computer Specifications
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- First Row: Processor -->
+                                        <div class="row g-3 mb-3 align-items-end">
+                                            <div class="col-md-6">
+                                                {{ form.processor_type.label(class="form-label") }}
+                                                {{ form.processor_type(class="form-control") }}
+                                            </div>
+                                            <div class="col-md-6">
+                                                {{ form.processor_speed.label(class="form-label") }}
+                                                {{ form.processor_speed(class="form-control") }}
+                                            </div>
+                                        </div>
+
+                                        <!-- Second Row: Memory & Storage -->
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                {{ form.ram_size.label(class="form-label") }}
+                                                {{ form.ram_size(class="form-control") }}
+                                            </div>
+                                            <div class="col-md-4">
+                                                {{ form.storage_size.label(class="form-label") }}
+                                                {{ form.storage_size(class="form-control") }}
+                                            </div>
+                                            <div class="col-md-4">
+                                                {{ form.storage_type.label(class="form-label") }}
+                                                {{ form.storage_type(class="form-select") }}
+                                            </div>
+                                        </div>
+
+                                        <!-- Combined Error Display Area -->
+                                        <div class="mt-2">
+                                            {% for field in ['processor_type', 'processor_speed', 'ram_size', 'storage_size', 'storage_type'] %}
+                                                {% for error in form[field].errors %}
+                                                    <div class="text-danger small">{{ form[field].label.text }}: {{ error }}</div>
+                                                {% endfor %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Generic Specs Text Area -->
+                            <div class="mb-3" id="generic-specs-block" style="display: none;">
+                                {{ form.specs.label(class="form-label") }}
+                                {{ form.specs(class="form-control", rows=4) }}
+                                {% for error in form.specs.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                            </div>
+                            <div class="mb-3">
+                                {{ form.serial_number.label(class="form-label") }}
+                                {{ form.serial_number(class="form-control") }}
+                                {% for error in form.serial_number.errors %}<span class="text-danger small">{{ error }}</span>{% endfor %}
+                            </div>
+
+                            <div class="mb-3">
+                                {% if is_edit_mode and asset %}
+                                    <label class="form-label">Asset Owner (Assigned To)</label>
+                                    <div class="form-control-plaintext p-2 bg-body-secondary rounded">{{ asset.owner.name if asset.owner else 'Unassigned' }}</div>
+                                    <div class="form-text text-warning">To change the owner, use the "Move Asset" form on the detail page.</div>
+                                {% elif form.owner_id %}
+                                    {{ form.owner_id.label(class="form-label") }}
+                                    {{ form.owner_id(class="form-select") }}
+                                    {% for error in form.owner_id.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                {% endif %}
+                            </div>
+
+                        </div>
+
+                        <!-- Right Column -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.purchase_date.label(class="form-label") }}
+                                {{ form.purchase_date(class="form-control") }}
+                                {% for error in form.purchase_date.errors %}<span class="text-danger small">{{ error }}</span>{% endfor %}
+                            </div>
+                             <div class="mb-3">
+                                {{ form.warranty_period.label(class="form-label") }}
+                                {{ form.warranty_period(class="form-control") }}
+                                {% for error in form.warranty_period.errors %}<span class="text-danger small">{{ error }}</span>{% endfor %}
+                            </div>
+                             <div class="mb-3">
+                                {{ form.purchase_cost.label(class="form-label") }}
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {{ form.purchase_cost(class="form-control") }}
+                                </div>
+                                {% for error in form.purchase_cost.errors %}<span class="text-danger small">{{ error }}</span>{% endfor %}
+
+                            </div>
+                            <div class="mb-3">
+                                {{ form.supplier_id.label(class="form-label") }}
+                                {{ form.supplier_id(class="form-select") }}
+                                {% for error in form.supplier_id.errors %}<span class="text-danger small">{{ error }}</span>{% endfor %}
+                            </div>
+                            <div class="mb-3">
+
+                            </div>
+                            <!-- Location Field Logic -->
+                            <div class="mb-3">
+                                {% if is_edit_mode and asset %}
+                                    <!-- On EDIT page, show as plain text -->
+                                    <label class="form-label">Location</label>
+                                    <div class="form-control-plaintext p-2 bg-body-secondary rounded">
+                                        {{ asset.room.facility.name if asset.room else 'N/A' }} - {{ asset.room.name if asset.room else '' }}
+                                    </div>
+                                    <div class="form-text text-warning">To change location, use the "Move Asset" form on the detail page.</div>
+                                {% elif form.room_id %}
+                                    <!-- On NEW page, show the dropdown -->
+                                    {{ form.room_id.label(class="form-label") }}
+                                    {{ form.room_id(class="form-select") }}
+                                    {% for error in form.room_id.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                {% endif %}
+                            </div>
+                            <div class="mb-3">
+                                {% if is_status_locked %}
+                                    <!-- If asset status is terminal (Retired/Lost), show a locked message -->
+                                    {{ form.status_readonly.label(class="form-label") }}
+                                    {{ form.status_readonly(class="form-control-plaintext fw-bold text-danger") }}
+                                    <div class="form-text text-danger">
+                                        This asset's status is locked and cannot be changed.
+                                    </div>
+                                {% elif is_repair_status %}
+                                    <!-- If asset is in repair, show the repair workflow message -->
+                                    {{ form.status_readonly.label(class="form-label") }}
+                                    {{ form.status_readonly(class="form-control-plaintext fw-bold text-warning") }}
+                                    <div class="form-text text-warning">
+                                        This status is managed by the repair workflow. To change it, please update the corresponding entry in "Manage Repairs".
+                                    </div>
+                                {% else %}
+                                    <!-- Otherwise, show the normal editable dropdown -->
+                                    {{ form.status.label(class="form-label") }}
+                                    {{ form.status(class="form-select") }}
+                                    {% for error in form.status.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                                {% endif %}
+                            </div>
+                            <div class="mb-3" id="disposal-notes-block" style="display: none;">
+                                {{ form.disposal_notes.label(class="form-label") }}
+                                {{ form.disposal_notes(class="form-control", rows=3) }}
+                                {% for error in form.disposal_notes.errors %}<span class="text-danger small">{{ error }}</span>{% endfor %}
+                            </div>
+
+                            <div class="mb-3">
+                                {{ form.department.label(class="form-label") }}
+                                {{ form.department(class="form-select") }}
+                                {% for error in form.department.errors %}<span class="text-danger small">{{ error }}</span>{% endfor %}
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-grid">
+                        {{ form.submit(class="btn btn-primary btn-lg") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const statusSelect = document.getElementById('status');
+    const disposalNotesBlock = document.getElementById('disposal-notes-block');
+    const endOfLifeStatuses = ['Proposed for Retirement', 'Retired', 'Lost'];
+    const categorySelect = document.getElementById('category-select');
+    const computerSpecsBlock = document.getElementById('computer-specs-block');
+    const genericSpecsBlock = document.getElementById('generic-specs-block');
+    const computerCategories = ['Laptop', 'Desktop'];
+
+    function toggleDisposalNotes() {
+        if (endOfLifeStatuses.includes(statusSelect.value)) {
+            disposalNotesBlock.style.display = 'block';
+        } else {
+            disposalNotesBlock.style.display = 'none';
+        }
+    }
+
+    if (statusSelect && disposalNotesBlock) {
+        // Run once on page load
+        toggleDisposalNotes();
+        // Add event listener for changes
+        statusSelect.addEventListener('change', toggleDisposalNotes);
+    }
+
+     function toggleSpecFields() {
+        // Find the text of the currently selected option
+        const selectedOptionText = categorySelect.options[categorySelect.selectedIndex].text;
+
+        if (computerCategories.includes(selectedOptionText)) {
+            computerSpecsBlock.style.display = 'block';
+            genericSpecsBlock.style.display = 'none';
+        } else {
+            computerSpecsBlock.style.display = 'none';
+            genericSpecsBlock.style.display = 'block';
+        }
+    }
+
+    if (categorySelect && computerSpecsBlock && genericSpecsBlock) {
+        // Run once on page load
+        toggleSpecFields();
+        // Add event listener for changes
+        categorySelect.addEventListener('change', toggleSpecFields);
+    }
+
+    // --- DYNAMIC SEARCH FOR ASSET OWNER ---
+    const ownerElement = document.getElementById('owner_id');
+    if (ownerElement) {
+        const ownerChoices = new Choices(ownerElement, {
+            placeholder: true,
+            placeholderValue: 'Type to search for a staff member...',
+            removeItemButton: true,
+        });
+
+        ownerElement.addEventListener('search', function(event) {
+            const searchTerm = event.detail.value;
+            if (searchTerm && searchTerm.length >= 1) { // Search on 1 character
+                fetch(`{{ url_for('main.search_staff') }}?q=${searchTerm}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        ownerChoices.setChoices(data, 'value', 'label', true);
+                    });
+            }
+        });
+    }
+});
+
+</script>
+{% endblock %}

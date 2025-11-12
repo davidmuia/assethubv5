@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ title }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('main.assets') }}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left-circle me-1"></i> Assets
+        </a>
+    </div>
+</div>
+<p class="text-muted">This page shows all assets that are awaiting or currently in repair.</p>
+{% endblock %}
+
+{% block content %}
+
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th>Asset Tag</th>
+            <th>Location</th>
+            <th>Problem Reported</th>
+            <th>Date Reported</th>
+            <th>Repair Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for repair in repairs %}
+    <tr>
+        <td><a href="{{ url_for('main.asset_detail', id=repair.asset_id) }}">{{ repair.asset.asset_tag }}</a></td>
+        <td>
+            {% if repair.asset.room and repair.asset.room.facility %}
+            {{ repair.asset.room.facility.name }} - {{ repair.asset.room.name }}
+            {% elif repair.asset.room %}
+            {{ repair.asset.room.name }} (No Facility)
+            {% else %}
+            No Location Assigned
+            {% endif %}
+        </td>
+        <td>{{ repair.problem_description | truncate(60) }}</td>
+        <td>{{ repair.report_date|localdatetime('%Y-%m-%d') }}</td>
+        <td><span class="badge bg-warning text-dark">{{ repair.status }}</span></td>
+        <td>
+            <a href="{{ url_for('admin.edit_repair', id=repair.id) }}" class="btn btn-sm btn-primary">
+                <i class="bi bi-pencil-square me-1"></i> Update
+            </a>
+        </td>
+    </tr>
+    {% else %}
+    <tr>
+        <td colspan="5" class="text-center">No active repairs found.</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

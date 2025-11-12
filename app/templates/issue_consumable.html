@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center">
+    <h1 class="h2">{{ title }}</h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header">
+                Log New Issuance
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        {{ form.consumable_id.label(class="form-label") }}
+                        {{ form.consumable_id(class="form-control") }}
+                        {% for error in form.consumable_id.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.quantity.label(class="form-label") }}
+                        {{ form.quantity(class="form-control") }}
+                        {% for error in form.quantity.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.issued_for_asset_id.label(class="form-label") }}
+                        <!-- Render the field from the form object. It will be an empty select. -->
+                        {{ form.issued_for_asset_id(class="form-control") }}
+                        {% for error in form.issued_for_asset_id.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        {{ form.submit(class="btn btn-primary btn-lg") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Helper function to initialize a dynamic Choices.js search field
+    function initDynamicChoices(elementId, searchUrl, placeholder) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+
+        const choices = new Choices(element, {
+            // Choices.js will use the hidden original input to store the value
+            // but will create its own visible search input.
+            placeholder: true,
+            placeholderValue: placeholder,
+            removeItemButton: true,
+            loadingText: 'Loading...',
+            noResultsText: 'No results found',
+            noChoicesText: 'Type 2 or more characters to search',
+            itemSelectText: 'Press to select',
+        });
+
+        let debounceTimeout;
+        const debounceDelay = 300;
+
+        // The container created by Choices.js is what we listen on
+        choices.containerOuter.element.addEventListener('search', function(event) {
+            const searchTerm = event.detail.value;
+            clearTimeout(debounceTimeout);
+
+            if (!searchTerm || searchTerm.length < 2) {
+                choices.clearChoices();
+                choices.setChoices([{ value: '', label: 'Type 2 or more characters to search', disabled: true }]);
+                return;
+            }
+
+            debounceTimeout = setTimeout(() => {
+                choices.clearChoices();
+                choices.setChoices(() => {
+                    return fetch(searchUrl + `?q=${searchTerm}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            setTimeout(() => { choices.input.element.focus(); }, 0);
+                            if (data.length === 0) {
+                                return [{ value: '', label: 'No results found', disabled: true }];
+                            }
+                            return data;
+                        });
+                });
+            }, debounceDelay);
+        });
+        choices.setChoices([{ value: '', label: 'Type 2 or more characters to search', disabled: true }]);
+    }
+
+    // Initialize both fields
+    initDynamicChoices('consumable_id', `{{ url_for('main.search_consumables') }}`, 'Type to search for a consumable...');
+    initDynamicChoices('issued_for_asset_id', `{{ url_for('main.search_assets') }}`, 'Type to search for an asset via ...');
+});
+</script>
+{% endblock %}

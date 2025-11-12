@@ -1,0 +1,48 @@
+<div class="report-header">
+    <div>
+        <h4>Detailed Asset Consumption Log</h4>
+        <p class="text-muted small mb-0">A complete audit trail of all consumables issued to or returned from primary assets.</p>
+    </div>
+    <div class="report-export-buttons"></div>
+</div>
+
+<table class="table table-sm table-striped datatable" style="width:100%">
+    <thead>
+        <tr>
+            <th>Asset Tag</th>
+            <th>Owner</th>
+            <th>Item</th>
+            <th>Transaction</th>
+            <th class="text-center">Qty</th>
+            <th>Date</th>
+            <th>Processed By</th>
+            <th>Notes</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for log, asset, consumable, user in logs %}
+        <tr>
+            <td><a href="{{ url_for('main.asset_detail', id=asset.id) }}">{{ asset.asset_tag }}</a></td>
+            <td>{{ asset.owner.name if asset.owner else 'N/A' }}</td>
+            <td>{{ consumable.item_type }} ({{ consumable.make }})</td>
+            <td>
+                {% if log.transaction_type == 'Issue' %}
+                    <span class="badge text-bg-primary">{{ log.transaction_type }}</span>
+                {% elif log.transaction_type == 'Return' %}
+                    <span class="badge text-bg-success">{{ log.transaction_type }}</span>
+                {% else %}
+                     <span class="badge text-bg-secondary">{{ log.transaction_type }}</span>
+                {% endif %}
+            </td>
+            <td class="text-center">{{ log.quantity }}</td>
+            <td>{{ log.issued_date | localdatetime }}</td>
+            <td>{{ user.username }}</td>
+            <td>
+                {% if log.transaction_type == 'Return' %}
+                    {{ log.notes }}
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
